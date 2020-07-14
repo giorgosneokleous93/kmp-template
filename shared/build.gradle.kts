@@ -1,0 +1,86 @@
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
+
+plugins {
+    kotlin("multiplatform")
+}
+repositories {
+    google()
+    jcenter()
+}
+
+kotlin {
+    jvm("android")
+
+    //select iOS target platform depending on the Xcode environment variables
+    val iOSTarget: (String, KotlinNativeTarget.() -> Unit) -> KotlinNativeTarget =
+        if (System.getenv("SDK_NAME")?.startsWith("iphoneos") == true)
+            ::iosArm64
+        else
+            ::iosX64
+
+    iOSTarget("ios") {
+        binaries {
+            framework {
+                baseName = "shared"
+            }
+        }
+    }
+
+    sourceSets {
+        val commonMain by getting {
+            dependencies {
+                implementation(kotlin("stdlib-common"))
+            }
+        }
+        val commonTest by getting {
+            dependencies {
+                implementation(kotlin("test-common"))
+                implementation(kotlin("test-annotations-common"))
+            }
+        }
+        val androidMain by getting {
+            dependencies {
+                implementation(kotlin("stdlib"))
+            }
+        }
+        val androidTest by getting {
+            dependencies {
+                implementation(kotlin("test"))
+                implementation(kotlin("test-junit"))
+            }
+        }
+        val iosMain by getting {
+        }
+        val iosTest by getting {
+        }
+    }
+}
+
+val packForXcode by tasks.creating(Sync::class) {
+    val targetDir = File(buildDir, "xcode-frameworks")
+
+    /// selecting the right configuration for the iOS
+    /// framework depending on the environment
+    /// variables set by Xcode build
+    val mode = System.getenv("CONFIGURATION") ?: "DEBUG"
+    val framework = kotlin.targets
+            .getByName < KotlinNativeTarget > ("ios")
+            .binaries.getFramework(mode)
+    inputs.property("mode", mode)
+    dependsOn(framework.linkTask)
+
+    from({ framework.outputDirectory })
+    into(targetDir)
+
+    /// generate a helpful ./gradlew wrapper with embedded Java path
+    doLast {
+        val gradlew = File(targetDir, "gradlew")
+        gradlew.writeText("#!/bin/bash\n"
+                + "export 'JAVA_HOME=${System.getProperty("java.home")}'\n"
+                + "cd '${rootProject.rootDir}'\n"
+                + "./gradlew \$@\n")
+        gradlew.setExecutable(true)
+    }
+}
+
+tasks.getByName("build").dependsOn(packForXcode)
