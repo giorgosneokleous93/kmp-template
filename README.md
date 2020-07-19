@@ -32,3 +32,9 @@ cd $SRCROOT/../shared/build/xcode-frameworks
 ```sh
 ./gradlew :shared:packForXcode
 ```
+
+# Get Started with Kotlin Multiplatform
+1) [Kotlin Docs - Multiplatform](https://kotlinlang.org/docs/reference/multiplatform.html)
+2) [Building MPP with Gradle](https://kotlinlang.org/docs/reference/building-mpp-with-gradle.html)
+3) [Codelab](https://play.kotlinlang.org/hands-on/Targeting%20iOS%20and%20Android%20with%20Kotlin%20Multiplatform/01_Introduction)
+4) [Touchlab Kotlin Multiplatform](https://touchlab.co/kotlin-multiplatform/)
